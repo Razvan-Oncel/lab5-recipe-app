@@ -1,3 +1,14 @@
+function filterRecipesByDiet(recipes, diet) {
+  if (!diet) return recipes;
+  return recipes.filter(r => {
+    if (diet === "vegetarian") return r.vegetarian !== false;
+    if (diet === "gluten free") return r.glutenFree !== false;
+    return true;
+  });
+}
+
+if (typeof module !== "undefined") module.exports = { filterRecipesByDiet };
+
 document.getElementById("searchBtn").onclick = async () => {
 
   const i = document.getElementById("ingredients").value.trim();
@@ -15,17 +26,21 @@ document.getElementById("searchBtn").onclick = async () => {
   m.textContent = "Loading...";
 
   try {
-    const res = await fetch(`/api/recipes?ingredients=${encodeURIComponent(i)}&diet=${d}`);
+    const res = await fetch(`/.netlify/functions/recipes?ingredients=${encodeURIComponent(i)}&diet=${encodeURIComponent(d)}`);
     const data = await res.json();
 
-    if (!data.recipes?.length) {
+    if (!res.ok) { m.textContent = data.error || "Something went wrong."; return; }
+
+    const recipes = filterRecipesByDiet(data.recipes || [], data.diet || "");
+
+    if (!recipes.length) {
       m.textContent = "No recipes found.";
       return;
     }
 
     m.textContent = "";
 
-    data.recipes.forEach(x =>
+    recipes.forEach(x =>
       r.innerHTML += `
         <div class="card">
           <img src="${x.image}" alt="${x.title}">
